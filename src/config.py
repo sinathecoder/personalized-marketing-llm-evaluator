@@ -1,3 +1,17 @@
+# Copyright 2026 Sina J <sjam3000@yahoo.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Configuration constants for the Personalized Marketing LLM Quality Control system.
 """
@@ -8,63 +22,90 @@ import openai
 API_KEY = ""  # Set your OpenAI API key here
 CLIENT = openai.OpenAI(api_key=API_KEY)
 
-# === Data Files ===
-CUSTOMERS_FILE = "customers_200_segments.csv"
-PRODUCTS_FILE = "ten_products_with_attributes.csv"
-GENERATED_COPY_CSV = "llm_generated_marketing_copy.csv"
-GENERATED_COPY_EXCEL = "llm_generated_marketing_copy.xlsx"
-LABELED_DATA_PARQUET = "labled_data_2.parquet"
+# === File Paths ===
+RAW_DIR = "raw"
+CUSTOMERS_FILE = f"{RAW_DIR}/customers_200_segments.csv"
+PRODUCTS_FILE = f"{RAW_DIR}/products_1_segment.csv"
+GENERATED_COPY_CSV = f"{RAW_DIR}/generated_marketing_copies.csv"
+GENERATED_COPY_EXCEL = f"{RAW_DIR}/generated_marketing_labeled.xlsx"
+LABELED_DATA_PARQUET = f"{RAW_DIR}/labeled_data_with_embeddings.parquet"
+
+# === Quality Dimensions (0-10 scale) ===
+QUALITY_DIMS = ["Relevance", "Creativity", "Personalization", "Clarity", "Completeness"]
+
+# === Label Generation ===
+HALF_LABELS_ZERO = False
 
 # === LLM Configuration ===
-LLM_MODEL = "gpt-4o-mini"
-LLM_TEMPERATURE = 0.8
-LLM_MAX_TOKENS = 120
+LLM_MODEL = "gpt-4o"
+LLM_TEMPERATURE = 0.7
+LLM_MAX_TOKENS = 1000
+
+# === Embedding Configuration ===
 EMBEDDING_MODEL = "text-embedding-3-small"
 
-# === Embedding Columns Configuration ===
-EMBEDDING_COLS = [
-    ("marketing_copy_embedding", "text-embedding-3-large"),
-    ("marketing_copy_embedding_256", "text-embedding-3-large_reduced_256"),
-    ("marketing_text_embedding_ada", "text_embedding_ada"),
-    ("marketing_text_embedding_3_small", "text_embedding_3_small"),
-]
-
-# === Strategies ===
-STRATEGIES = ["oversample_1to1", "weighted_99to1"]
-
-# === Experiments Configuration ===
-EXPERIMENTS_CONFIG = [
-    ("marketing_copy_embedding", "oversample_1to1", "3-large (OS)"),
-    ("marketing_copy_embedding", "weighted_99to1", "3-large (W99)"),
-    ("marketing_copy_embedding_256", "oversample_1to1", "3-large-256 (OS)"),
-    ("marketing_copy_embedding_256", "weighted_99to1", "3-large-256 (W99)"),
-    ("marketing_text_embedding_ada", "oversample_1to1", "Ada (OS)"),
-    ("marketing_text_embedding_ada", "weighted_99to1", "Ada (W99)"),
-    ("marketing_text_embedding_3_small", "oversample_1to1", "3-small (OS)"),
-    ("marketing_text_embedding_3_small", "weighted_99to1", "3-small (W99)"),
-]
-
-# === Training Configuration ===
-RANDOM_STATE = 42
-TEST_SIZE = 0.3
-VAL_SPLIT_FROM_TEMP = 0.80
-EPOCHS = 200
-BATCH_SIZE = 256
-PATIENCE = 10
-WEIGHTED_CLASS_WEIGHT = {0: 1, 1: 99}
-
-# === Quality Dimensions ===
-QUALITY_DIMS = ["P", "H", "C", "G", "L", "R"]
-
-# === Quality Dimension Names ===
-QUALITY_DIM_NAMES = {
-    "P": "Privacy",
-    "H": "Hallucination",
-    "C": "Coherence",
-    "G": "Grammar",
-    "L": "Linguistic",
-    "R": "Reject (any violation)",
+# === EDA Column Mappings ===
+NUMERIC_COLUMNS_MAPPING = {
+    "total_spent": None,
+    "age": None,
+    "income": None,
+    "purchase_frequency": None,
+    "days_since_last_purchase": None,
+    "total_purchases": None,
+    "avg_order_value": None,
+}
+CATEGORICAL_COLUMNS_MAPPING = {
+    "gender": None,
+    "product_category_preference": None,
+    "subscription_status": None,
+    "communication_preference": None,
+    "preferred_language": None,
+    "location": None,
+    "loyalty_tier": None,
+    "device_preference": None,
+    "promotion_response": None,
 }
 
-# === Random Label Generation Config ===
-HALF_LABELS_ZERO = True  # First half of labels are zeros, rest are random
+# === Experiment Groups ===
+EXPERIMENTS = {
+    "PromptOnly": {
+        "only_prompt": True,
+        "model": "svc",
+        "group": "single_embedding",
+    },
+    "MarketingCopyOnly": {
+        "only_prompt": False,
+        "model": "svc",
+        "group": "single_embedding",
+    },
+    "SVC_Averaged": {
+        "only_prompt": None,
+        "model": "svc",
+        "group": "averaged",
+    },
+    "SVC_Combined": {
+        "only_prompt": None,
+        "model": "svc",
+        "group": "combined",
+    },
+    "XGB_Averaged": {
+        "only_prompt": None,
+        "model": "xgb",
+        "group": "averaged",
+    },
+    "XGB_Combined": {
+        "only_prompt": None,
+        "model": "xgb",
+        "group": "combined",
+    },
+    "RF_Averaged": {
+        "only_prompt": None,
+        "model": "rf",
+        "group": "averaged",
+    },
+    "RF_Combined": {
+        "only_prompt": None,
+        "model": "rf",
+        "group": "combined",
+    },
+}
